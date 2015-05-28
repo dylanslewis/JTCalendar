@@ -13,7 +13,7 @@
 
 @property (weak, nonatomic) JTCalendar *calendarManager;
 
-@property (nonatomic) NSDate *date;
+@property (strong, nonatomic) NSDate *date;
 @property (assign, nonatomic) BOOL isOtherMonth;
 
 - (void)reloadData;

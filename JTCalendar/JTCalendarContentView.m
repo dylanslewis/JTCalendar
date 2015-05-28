@@ -53,7 +53,6 @@
     self.showsHorizontalScrollIndicator = NO;
     self.showsVerticalScrollIndicator = NO;
     self.pagingEnabled = YES;
-    self.clipsToBounds = YES;
     
     for(int i = 0; i < NUMBER_PAGES_LOADED; ++i){
         JTCalendarMonthView *monthView = [JTCalendarMonthView new];
@@ -77,17 +76,9 @@
     CGFloat width = self.frame.size.width;
     CGFloat height = self.frame.size.height;
     
-    if(self.calendarManager.calendarAppearance.readFromRightToLeft){
-        for(UIView *view in [[monthsViews reverseObjectEnumerator] allObjects]){
-            view.frame = CGRectMake(x, 0, width, height);
-            x = CGRectGetMaxX(view.frame);
-        }
-    }
-    else{
-        for(UIView *view in monthsViews){
-            view.frame = CGRectMake(x, 0, width, height);
-            x = CGRectGetMaxX(view.frame);
-        }
+    for(UIView *view in monthsViews){
+        view.frame = CGRectMake(x, 0, width, height);
+        x = CGRectGetMaxX(view.frame);
     }
     
     self.contentSize = CGSizeMake(width * NUMBER_PAGES_LOADED, height);
@@ -96,7 +87,7 @@
 - (void)setCurrentDate:(NSDate *)currentDate
 {
     self->_currentDate = currentDate;
-
+    
     NSCalendar *calendar = self.calendarManager.calendarAppearance.calendar;
     
     for(int i = 0; i < NUMBER_PAGES_LOADED; ++i){
@@ -151,11 +142,79 @@
     return [calendar dateFromComponents:componentsNewDate];
 }
 
+#pragma mark - Load Month
+
+- (void)loadPreviousMonth
+{
+    JTCalendarMonthView *monthView = [monthsViews lastObject];
+    
+    [monthsViews removeLastObject];
+    [monthsViews insertObject:monthView atIndex:0];
+    
+    NSCalendar *calendar = self.calendarManager.calendarAppearance.calendar;
+    
+    // Update currentDate
+    {
+        NSDateComponents *dayComponent = [NSDateComponents new];
+        dayComponent.month = -1;
+        self->_currentDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
+    }
+    
+    // Update monthView
+    {
+        NSDateComponents *dayComponent = [NSDateComponents new];
+        dayComponent.month = - (NUMBER_PAGES_LOADED / 2);
+        
+        NSDate *monthDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
+        monthDate = [self beginningOfMonth:monthDate];
+        
+        [monthView setBeginningOfMonth:monthDate];
+        [monthView reloadData];
+    }
+    
+    [self configureConstraintsForSubviews];
+}
+
+- (void)loadNextMonth
+{
+    JTCalendarMonthView *monthView = [monthsViews firstObject];
+
+    [monthsViews removeObjectAtIndex:0];
+    [monthsViews addObject:monthView];
+    
+    NSCalendar *calendar = self.calendarManager.calendarAppearance.calendar;
+    
+    // Update currentDate
+    {
+        NSDateComponents *dayComponent = [NSDateComponents new];
+        dayComponent.month = 1;
+        self->_currentDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
+    }
+    
+    // Update monthView
+    {
+        NSDateComponents *dayComponent = [NSDateComponents new];
+        dayComponent.month = (NUMBER_PAGES_LOADED - 1) - (NUMBER_PAGES_LOADED / 2);
+        
+        NSDate *monthDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
+        monthDate = [self beginningOfMonth:monthDate];
+        
+        [monthView setBeginningOfMonth:monthDate];
+        [monthView reloadData];
+    }
+    
+    [self configureConstraintsForSubviews];
+}
+
 #pragma mark - JTCalendarManager
 
 - (void)setCalendarManager:(JTCalendar *)calendarManager
 {
     self->_calendarManager = calendarManager;
+    
+    for(JTCalendarMonthView *view in monthsViews){
+        [view setCalendarManager:calendarManager];
+    }
     
     for(JTCalendarMonthView *view in monthsViews){
         [view setCalendarManager:calendarManager];
@@ -171,9 +230,6 @@
 
 - (void)reloadAppearance
 {
-    // Fix when change mode during scroll
-    self.scrollEnabled = YES;
-    
     for(JTCalendarMonthView *monthView in monthsViews){
         [monthView reloadAppearance];
     }

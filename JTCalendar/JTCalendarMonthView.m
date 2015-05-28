@@ -97,7 +97,7 @@
         view.frame = CGRectMake(0, y, width, height);
         y = CGRectGetMaxY(view.frame);
         
-        if(cacheLastWeekMode && i == weeksToDisplay - 1){
+        if(cacheLastWeekMode && i == weeksToDisplay - 1) {
             height = 0.;
         }
     }

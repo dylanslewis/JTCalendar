@@ -57,35 +57,39 @@ static NSArray *cacheDaysOfWeeks;
     }
     
     NSDateFormatter *dateFormatter = [NSDateFormatter new];
-    NSMutableArray *days = nil;
-    
-    switch(self.calendarManager.calendarAppearance.weekDayFormat) {
-        case JTCalendarWeekDayFormatSingle:
-            days = [[dateFormatter veryShortStandaloneWeekdaySymbols] mutableCopy];
-            break;
-    case JTCalendarWeekDayFormatShort:
-            days = [[dateFormatter shortStandaloneWeekdaySymbols] mutableCopy];
-            break;
-    case JTCalendarWeekDayFormatFull:
-            days = [[dateFormatter standaloneWeekdaySymbols] mutableCopy];
-            break;
-    }
-    
-    for(NSInteger i = 0; i < days.count; ++i){
-        NSString *day = days[i];
-        [days replaceObjectAtIndex:i withObject:[day uppercaseString]];
-    }
-    
+    NSMutableArray *days = [[dateFormatter standaloneWeekdaySymbols] mutableCopy];
+        
     // Redorder days for be conform to calendar
     {
         NSCalendar *calendar = self.calendarManager.calendarAppearance.calendar;
         NSUInteger firstWeekday = (calendar.firstWeekday + 6) % 7; // Sunday == 1, Saturday == 7
-        
+                
         for(int i = 0; i < firstWeekday; ++i){
             id day = [days firstObject];
             [days removeObjectAtIndex:0];
             [days addObject:day];
         }
+    }
+    
+    switch(self.calendarManager.calendarAppearance.weekDayFormat){
+        case JTCalendarWeekDayFormatSingle:
+            for(NSInteger i = 0; i < days.count; ++i){
+                NSString *day = days[i];
+                [days replaceObjectAtIndex:i withObject:[[day uppercaseString] substringToIndex:1]];
+            }
+            break;
+        case JTCalendarWeekDayFormatShort:
+            for(NSInteger i = 0; i < days.count; ++i){
+                NSString *day = days[i];
+                [days replaceObjectAtIndex:i withObject:[[day uppercaseString] substringToIndex:3]];
+            }
+            break;
+        case JTCalendarWeekDayFormatFull:
+            for(NSInteger i = 0; i < days.count; ++i){
+                NSString *day = days[i];
+                [days replaceObjectAtIndex:i withObject:[day uppercaseString]];
+            }
+            break;
     }
     
     cacheDaysOfWeeks = days;
@@ -98,17 +102,9 @@ static NSArray *cacheDaysOfWeeks;
     CGFloat width = self.frame.size.width / 7.;
     CGFloat height = self.frame.size.height;
     
-    if(self.calendarManager.calendarAppearance.readFromRightToLeft){
-        for(UIView *view in [[self.subviews reverseObjectEnumerator] allObjects]){
-            view.frame = CGRectMake(x, 0, width, height);
-            x = CGRectGetMaxX(view.frame);
-        }
-    }
-    else{
-        for(UIView *view in self.subviews){
-            view.frame = CGRectMake(x, 0, width, height);
-            x = CGRectGetMaxX(view.frame);
-        }
+    for(UIView *view in self.subviews){
+        view.frame = CGRectMake(x, 0, width, height);
+        x = CGRectGetMaxX(view.frame);
     }
     
     // No need to call [super layoutSubviews]
